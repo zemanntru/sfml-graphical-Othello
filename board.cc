@@ -62,7 +62,7 @@ int main()
     const int width = 600;
     const int length = 600;
     sf::RenderWindow window(sf::VideoMode(width,length), "Othello", sf::Style::Titlebar | sf::Style::Close);
-    MyGameGraphics::Board board(0, 100, 8, 8, 75);
+    MyGameGraphics::Board board(0, 0, 8, 8, 75);
     sf::CircleShape pcWhite(radius), pcBlack(radius);
     pcWhite.setFillColor(sf::Color::White);
     pcWhite.setOutlineThickness(-1.f);
@@ -74,6 +74,7 @@ int main()
     while(window.isOpen())
     {
         sf::Event event;
+    
         while(window.pollEvent(event))
         {
             switch (event.type)
@@ -94,7 +95,7 @@ int main()
 
                         if(posy > length - radius)
                             posy = length - radius;
-                        else if(posy <  radius)
+                        else if(posy < radius)
                             posy = radius;
 
                         pcBlack.setPosition(posx - radius, posy - radius);

@@ -1,7 +1,7 @@
 LIBS= -lsfml-graphics -lsfml-window -lsfml-system
 CC = g++ -std=c++14
 
-SRCS = main.cc
+SRCS = board.cc
 OBJS = $(patsubst %.cc,%.o,$(SRCS))
 TARGETS = sfml-app
 
