@@ -1,1 +1,0 @@
-# sfml-Othello-engine

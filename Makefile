@@ -1,9 +1,10 @@
-LIBS= -lsfml-graphics -lsfml-window -lsfml-system
+LIBS= -lsfml-graphics -lsfml-window -lsfml-system -pthread
 CC = g++ -std=c++14
 
-SRCS = board.cc
+SRCS = main.cc board.cc 
+
 OBJS = $(patsubst %.cc,%.o,$(SRCS))
-TARGETS = sfml-app
+TARGETS = test
 
 all: $(TARGETS)
 
