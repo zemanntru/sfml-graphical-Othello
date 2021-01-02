@@ -9,6 +9,7 @@
 #include <cassert>
 #include <iostream>
 #include "constants.hpp"
+#include "logic.hpp"
 
 typedef unsigned __int128 uint128_t;
 
@@ -26,17 +27,19 @@ namespace Graphics
 
 class Board {
     public:
-        Board(sf::Color color);
+        Board(sf::Color color, int playerType);
         virtual ~Board();
         Board(const Board& src) = delete;
         Board& operator=(const Board& rhs) = delete;
         void ReceiveUpdate(const std::string &src);
         std::string GetEncodedBoard();
     private:
-        void RenderBoard();
+        void RenderInteractiveBoard();
+        void RenderNonInteractiveBoard();
         void DrawBoard(sf::RenderWindow& window);
         void GetSelfUpdate(int idx, int idy);
         int mBoard[BOARD_SIZE][BOARD_SIZE];
+        int mPlayerType;
         bool mAllowUpdate;
         sf::Color mColor;
         Graphics::Board mBackground;

@@ -1,10 +1,10 @@
 LIBS= -lsfml-graphics -lsfml-window -lsfml-system -pthread
-CC = g++ -std=c++14
+CC = g++ -std=c++17
 
-SRCS = main.cc board.cc 
+SRCS = board.cc client.cc logic.cc
 
 OBJS = $(patsubst %.cc,%.o,$(SRCS))
-TARGETS = test
+TARGETS = client
 
 all: $(TARGETS)
 

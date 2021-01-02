@@ -36,7 +36,7 @@ void Graphics::Board::draw(sf::RenderTarget& target, sf::RenderStates states) co
 }
 
 
-Board::Board(sf::Color color) : mColor(color) {
+Board::Board(sf::Color color, int playerType) : mColor(color), mPlayerType(playerType){
     for (int i = 0; i < BOARD_SIZE; i++) 
         for(int j = 0; j < BOARD_SIZE; j++) 
             mBoard[i][j] = 0;
@@ -59,19 +59,38 @@ Board::Board(sf::Color color) : mColor(color) {
         mBoard[5][3] = POSWHITE;
         mAllowUpdate = false;
     }
-    mDisplayThread = std::thread{ &Board::RenderBoard, this};
+    if(mPlayerType == HUMAN)
+        mDisplayThread = std::thread{ &Board::RenderInteractiveBoard, this};
+    else
+        mDisplayThread = std::thread{ &Board::RenderNonInteractiveBoard, this};
 }
 
 Board::~Board() {
+    int whiteScore = 0, blackScore = 0;
+    std::unique_lock<std::mutex> lock(mMutex);
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
+            if(mBoard[i][j] == WHITE) whiteScore++;
+            else if(mBoard[i][j] == BLACK) blackScore++;
+        }
+    }
+    lock.unlock();
+    if(whiteScore > blackScore) std::cout << "White wins: " << whiteScore << " - " << blackScore << std::endl;
+    else if(whiteScore < blackScore) std::cout << "Black wins: " << blackScore << " - " << whiteScore << std::endl;
+    else std::cout << "Draw!" << std::endl;
     mDisplayThread.join();
 }
 
 std::string Board::GetEncodedBoard() {
     std::unique_lock<std::mutex> goLock(mMutexGo);
+    std::string ret = "";
+
+    if(mAllowUpdate == false) ret += "F";
+    else ret += "T";
     mCond.wait(goLock, [&]{ return !mAllowUpdate; });
 
     std::unique_lock<std::mutex> lock(mMutex);
-    std::string ret = "";
+    
 
     for(int i = 0; i < BOARD_SIZE; i++) {
         for(int j = 0; j < BOARD_SIZE; j++) {
@@ -156,7 +175,6 @@ void Board::ReceiveUpdate(const std::string& src){
 void Board::GetSelfUpdate(int idx, int idy) {
     if (mColor == sf::Color::Black) assert(mBoard[idy][idx] == POSBLACK);
     else assert(mBoard[idy][idx] == POSWHITE);
-    mAllowUpdate = false;
     std::unique_lock<std::mutex> lock(mMutex);
     uint128_t player = 0,
               opponent = 0,
@@ -226,6 +244,8 @@ void Board::GetSelfUpdate(int idx, int idy) {
         mBoard[rem / BOARD_SIZE][rem % BOARD_SIZE] = WHITE;
         opponent &= opponent - 1;
     }
+    std::unique_lock<std::mutex> goLock(mMutexGo);
+    mAllowUpdate = false;
     mCond.notify_one();
 }
 
@@ -244,12 +264,12 @@ void Board::DrawBoard(sf::RenderWindow& window) {
                 disc.setFillColor(sf::Color::White);
                 disc.setPosition(((float)j+0.5)*GRID_SIZE - RADIUS, ((float)i+0.5)*GRID_SIZE - RADIUS);
                 window.draw(disc);
-            } else if(mBoard[i][j] == POSBLACK) {
+            } else if(mPlayerType == HUMAN && mAllowUpdate && mBoard[i][j] == POSBLACK) {
                 sf::CircleShape disc(RADIUS);
                 disc.setFillColor((sf::Color){0,0,0,128});
                 disc.setPosition(((float)j+0.5)*GRID_SIZE - RADIUS, ((float)i+0.5)*GRID_SIZE - RADIUS);
                 window.draw(disc);
-            } else if(mBoard[i][j] == POSWHITE) {
+            } else if(mPlayerType == HUMAN && mAllowUpdate && mBoard[i][j] == POSWHITE) {
                 sf::CircleShape disc(RADIUS);
                 disc.setFillColor((sf::Color){255,255,255,128});
                 disc.setPosition(((float)j+0.5)*GRID_SIZE - RADIUS, ((float)i+0.5)*GRID_SIZE - RADIUS);
@@ -259,7 +279,7 @@ void Board::DrawBoard(sf::RenderWindow& window) {
     }
 }
 
-void Board::RenderBoard() {
+void Board::RenderInteractiveBoard() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), 
             "Othello", sf::Style::Titlebar | sf::Style::Close);
 
@@ -319,6 +339,34 @@ void Board::RenderBoard() {
         window.clear(sf::Color(192,192,192));
         DrawBoard(window);
         if(mAllowUpdate) window.draw(cursorTile);
+        window.display();
+    }
+}
+
+void Board::RenderNonInteractiveBoard() {
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), 
+            "Othello", sf::Style::Titlebar | sf::Style::Close);
+    GameCPU::ZemanntruBot bot(mColor == sf::Color::Black ? 'B' : 'W');
+    while(window.isOpen())
+    {
+        sf::Event event;
+        while(window.pollEvent(event))
+        {
+            switch (event.type)
+            {
+                case sf::Event::Closed: { 
+                    window.close();
+                    break;
+                }
+                default: break;
+            }
+        }
+        if(mAllowUpdate) {
+            std::pair<int,int>botMove = bot.chooseMove(mBoard);
+            GetSelfUpdate(botMove.first, botMove.second);
+        }
+        window.clear(sf::Color(192,192,192));
+        DrawBoard(window);
         window.display();
     }
 }

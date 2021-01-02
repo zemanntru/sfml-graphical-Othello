@@ -1,41 +1,67 @@
-#ifndef CLIENT_FILE
-#define CLIENT_FILE
+#include "board.hpp"
 
-#include "client.hpp"
+#include <cassert>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <unistd.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <string>
+#include <poll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
-Client::Client(sf::Color color) : mColor(color) {
-    mSockfd = socket(AF_INET, SOCK_STREAM, 0);
-    assert(mSockfd != -1);
-    mServer = gethostbyname("localhost");
-    assert(mServer != nullptr);
+int main(int argc, char *argv[]) {
 
-    memset(&mServerInfo, 0, sizeof mServerInfo);
-    mServerInfo.sin_family = AF_INET;
-    strcpy((char*)mServer->h_addr, (char*)&mServerInfo.sin_addr.s_addr);
-    mServerInfo.sin_port = htons(TCP_PORT);
+    if(argc != 2) {
+        fprintf(stderr, "usage %s (human | bot)\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-    assert(connect(mSockfd, (struct sockaddr *)&mServerInfo, sizeof mServerInfo) != -1);
-
-    std::cout << "Established connection with the server." << std::endl;
-}
-
-void Client::Run() {
-    Board myBoard(mColor);
+    int sockfd;
+    sf::Color mColor;
+    struct sockaddr_in serverInfo;
+    struct hostent *server;
     bool go = 1;
+    char buffer[MAXLEN];
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    assert(sockfd != -1);
+    server = gethostbyname("localhost");
+    assert(server != nullptr);
+    memset(&serverInfo, 0, sizeof serverInfo);
+    serverInfo.sin_family = AF_INET;
+    strcpy((char*)server->h_addr, (char*)&serverInfo.sin_addr.s_addr);
+    serverInfo.sin_port = htons(TCP_PORT);
+    assert(connect(sockfd, (struct sockaddr *)&serverInfo, sizeof serverInfo) != -1);
+    memset(buffer, 0, MAXLEN);
+    assert(recv(sockfd, &buffer, 1, 0) != -1);
+    
+    int playerType;
+    if(!strcmp("human", argv[1]))
+        playerType = HUMAN;
+    else if(!strcmp("bot", argv[1]))
+        playerType = BOT;
+    else
+        assert(false);
+    
+    Board myBoard((buffer[0]=='B' ? sf::Color::Black : sf::Color::White), playerType);
+
     while (go) {
-        const char* packet = nullptr;
-        assert(recv(mSockfd, &packet, sizeof packet, 0) != -1);
-        assert(strlen(packet) == 65); // first bit game flag, remaining 64 bits the compressed board
-        if (packet[0] == '0') {
-            std::string src(++packet);
-            assert(src.length() == 64);
+        memset(buffer, 0, MAXLEN);
+        assert(recv(sockfd, &buffer, BUF_SIZE, 0) != -1); // first bit game flag, remaining 64 bits the compressed board
+        if (buffer[0] == '0') {
+            std::string src(buffer);
+            src = src.substr(1,64);
             myBoard.ReceiveUpdate(src);
             src = myBoard.GetEncodedBoard();
-            packet = src.c_str();
-            assert(send(mSockfd, packet, sizeof packet, 0) != -1);
-        } else if (packet[0] == '1') 
+            memset(buffer, 0, MAXLEN);
+            strcpy(buffer, src.c_str());
+            assert(send(sockfd, buffer, BUF_SIZE, 0) != -1);
+        } else if (buffer[0] == '1') 
             break;
     }
+    std::cout << "game finished" << std::endl;
 }
-
-#endif
