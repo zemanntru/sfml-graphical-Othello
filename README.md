@@ -1,10 +1,10 @@
-# BILL-Othello based board game program
+# SFML-based GUI Othello 
 
 ### Background
 
 #### About the Project
 
-A first year Computer Engineering project for Introduction to C programming at the University of Toronto. This code was originally written in C, but refactored into C++ with some code mechanics reworked to maintain academic integrity. The heuristic and evaluation patterns for edge pieces were inspired by the late 80s Othello engine BILL. Like BILL, this program entails Bayesian probability analysis during the precomputation of lookup tables. 
+A first year Computer Engineering project for Introduction to C programming at the University of Toronto. This code was originally written in C, but refactored into C++ with SFML graphics and some code mechanics reworked to maintain academic integrity. The heuristic and evaluation patterns for edge pieces were inspired by the late 80s Othello engine BILL. Like BILL, this program entails Bayesian probability analysis during the precomputation of lookup tables. 
 
 #### How to Run this Code
 
