@@ -64,36 +64,4 @@ namespace GameCPU {
             bitset128_64 negaScout(int128_t player, int128_t opponent, int depth, int64_t alpha, int64_t beta, int stage);
     };
 }
-
-/*
-
-
-
-
-// key functions used for the program
-bitset128_128 setupGame(); 
-int128_t getMoveUpdate(int128_t mv, int128_t ply, int128_t opp);
-bitset128_128 updateBitBoard(int128_t ply, int128_t opp, char row, char col);
-bool isMoveValid(int128_t n, char row, char col); 
-void displayMove(int move);
-void displayBitBoard(int128_t whiteSq, int128_t blackSq);
-int getTopEdgeKey(int128_t ply, int128_t opp); 
-int getRightEdgeKey(int128_t ply, int128_t opp);
-int getBottomEdgeKey(int128_t ply, int128_t opp);
-int getLeftEdgeKey(int128_t ply, int128_t opp);
-int64_t endgameEvaluation(int128_t ply, int128_t opp);
-int64_t edgeStabilityEvaluation(int128_t ply, int128_t opp);
-int64_t potentialMobilityEvaluation(int128_t ply, int128_t opp);
-int64_t mobilityEvaluation(int128_t ply, int128_t opp);
-int64_t evaluateBoard(int128_t ply, int128_t opp, int stage);
-int customHash(int128_t ply, int128_t opp);
-void resetTable();
-void rehashTable(std::vector<std::vector<uint64_t>>& dt);
-int128_t getAvailableMoves(int128_t ply, int128_t opp);
-bitset128_64 negaScout(int128_t ply, int128_t opp, int depth, int64_t alpha, int64_t beta, int stage);
-bitset128_128 findBestMove(int128_t ply, int128_t opp, char colour);
-std::pair<int, int> chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE], char colour);
-
-
-*/
 #endif
