@@ -1,18 +1,22 @@
 LIBS= -lsfml-graphics -lsfml-window -lsfml-system -pthread
 CC = g++ -std=c++17
 
-SRCS = board.cc client.cc logic.cc
+CLIENT_SRCS = board.cc client.cc logic.cc 
+SERVER_SRCS = server.cc
 
-OBJS = $(patsubst %.cc,%.o,$(SRCS))
-TARGETS = client
-
-all: $(TARGETS)
+OBJS_CLIENT = $(patsubst %.cc,%.o,$(CLIENT_SRCS))
+OBJS_SERVER = $(patsubst %.cc,%.o,$(SERVER_SRCS))
 
 %.o: %.cc
 	$(CC) -c -g $< -o $@
 
-$(TARGETS): $(OBJS)
+all: client server
+
+client: $(OBJS_CLIENT)
 	$(CC) $^ -o $@ $(LIBS)
+    
+server: $(OBJS_SERVER)
+	$(CC) $^ -o $@ 
 
 clean:
 	@echo "**Removing object files and executable**"
