@@ -126,7 +126,7 @@ int64_t GameCPU::ZemanntruBot::edgeStabilityEvaluation(int128_t player, int128_t
 }
 
 int64_t GameCPU::ZemanntruBot::potentialMobilityEvaluation(int128_t player, int128_t opponent)
-{   //Count differential empty spaces for non edge pieces of both player and opponentonent
+{   //Count differential empty spaces for non edge pieces of both player and opponent
     int128_t combo = (player | opponent) & 0x007E7E7E7E7E7E00, empty = ~(player | opponent), mask;
     int64_t pplayer = 0, popponent = 0;
 
@@ -142,7 +142,7 @@ int64_t GameCPU::ZemanntruBot::potentialMobilityEvaluation(int128_t player, int1
 }
 
 int64_t GameCPU::ZemanntruBot::mobilityEvaluation(int128_t player, int128_t opponent)
-{    //Count differential move possibilities for both player and opponentonent
+{    //Count differential move possibilities for both player and opponent
     int64_t mPlayer = __builtin_popcountll(getAvailableMoves(player, opponent)),
             mOpponent = __builtin_popcountll(getAvailableMoves(opponent, player));
     return 100 * (mPlayer - mOpponent) / (mPlayer + mOpponent + 2);
@@ -241,15 +241,15 @@ bitset128_64 GameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent
         turnopponent = 1; 
         moves = getAvailableMoves(opponent, player);
         if(moves)
-        {   // If opponentonent has moves
+        {   // If opponent has moves
             if(nxtDepth == 1) 
-            {   //if depth is 1, we cannot skip to the opponentonent's turn
+            {   //if depth is 1, we cannot skip to the opponent's turn
                 //Evaluate and save the entries
                 eval = evaluateBoard(player, opponent, stage);
                 mLookupTable[customHash(player,opponent)] = {{0, eval}, {player, opponent}, depth, (char)(eval <= alpha ? 3 : (eval >= beta ? 2 : 1))};
                 return {0, eval};
             }
-            //Swap the current alpha and beta values now in opponentonent's reference
+            //Swap the current alpha and beta values now in opponent's reference
             aalpha = -beta; 
             bbeta = -alpha;
             nxtplayer = player; 
@@ -292,7 +292,7 @@ bitset128_64 GameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent
         moves &= moves - 1;
     } //Save entries after search
     mLookupTable[customHash(player,opponent)] = {{bestMove, aalpha}, {nxtopponent, nxtplayer}, depth, (char)(aalpha <= alpha ? 3 : (aalpha >= beta ? 2 : 1))};
-    if(turnopponent) aalpha = -aalpha; //Flip new lower bound if it is the opponentonent player
+    if(turnopponent) aalpha = -aalpha; //Flip new lower bound if it is the opponent player
     return {bestMove, aalpha};
 }
 
