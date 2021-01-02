@@ -42,7 +42,6 @@ namespace GameCPU {
             ~ZemanntruBot();
             ZemanntruBot(const ZemanntruBot& src) = delete;
             ZemanntruBot& operator=(const ZemanntruBot& rhs) = delete;
-            void DisplayBitBoard(int128_t player, int128_t opponent);
             std::pair<int,int> chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE]);
         private:
             int mTimeStart;

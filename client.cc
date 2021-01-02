@@ -20,12 +20,15 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    int sockfd;
+    int sockfd, playerType;
     sf::Color mColor;
     struct sockaddr_in serverInfo;
     struct hostent *server;
     bool go = 1;
     char buffer[MAXLEN];
+
+    // Code allows server connection. To learn more, see
+    // https://beej.us/guide/bgnet/html/#client-server-background
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     assert(sockfd != -1);
@@ -39,7 +42,6 @@ int main(int argc, char *argv[]) {
     memset(buffer, 0, MAXLEN);
     assert(recv(sockfd, &buffer, 1, 0) != -1);
     
-    int playerType;
     if(!strcmp("human", argv[1]))
         playerType = HUMAN;
     else if(!strcmp("bot", argv[1]))
@@ -49,9 +51,12 @@ int main(int argc, char *argv[]) {
     
     Board myBoard((buffer[0]=='B' ? sf::Color::Black : sf::Color::White), playerType);
 
+    // The client model alternates between receiving a call and sending out a call
     while (go) {
         memset(buffer, 0, MAXLEN);
-        assert(recv(sockfd, &buffer, BUF_SIZE, 0) != -1); // first bit game flag, remaining 64 bits the compressed board
+        assert(recv(sockfd, &buffer, BUF_SIZE, 0) != -1); 
+        
+        // first bit game flag, remaining 64 bits the compressed board
         if (buffer[0] == '0') {
             std::string src(buffer);
             src = src.substr(1,64);

@@ -29,6 +29,9 @@ int main() {
     int yes = 1;
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
+    // Code allows server setup and client connections. To learn more, see
+    // https://beej.us/guide/bgnet/html/#client-server-background
+
     assert(sockfd != -1);
     memset(&serverInfo, 0, sizeof serverInfo);
     serverInfo.sin_family = AF_INET;
@@ -55,14 +58,18 @@ int main() {
     int playerTwofd  = accept(sockfd, (struct sockaddr*)&clientInfo2, &len2);
     assert(playerTwofd != -1);
 
+    // The first player to join gets black while the second player is white.
     assert(send(playerOnefd, "B", 1, 0) != -1);
     assert(send(playerTwofd, "W", 1, 0) != -1);
 
+    // Sends a call to black player allow bypassing the initial blocking recv call
     assert(send(playerOnefd, SETUP_STR, BUF_SIZE, 0) != -1);
 
     int noMoves = 0;
     char buffer[MAXLEN];
 
+    // Finite state machine modelling the player. It starts with a receive call followed by send.
+    // The socket file descriptors are swapped each iteration to alternate player turns
     while (true)
     {
         memset(buffer, 0, MAXLEN);
@@ -74,11 +81,14 @@ int main() {
         buffer[0] = '0';
         assert(send(playerTwofd, &buffer, BUF_SIZE, 0) != -1);
     
-        if(noMoves == 2) {
+        if(noMoves == 2) { // exits the loop when both players do not have a valid move
+            std::cout << "game room closed" << std::endl;
             break;
         }
         std::swap(playerOnefd, playerTwofd);
     }
+
+    // notifies the players that the game has finished
     assert(send(playerOnefd, ENDGAME_STR, BUF_SIZE, 0) != -1);
     assert(send(playerTwofd, ENDGAME_STR, BUF_SIZE, 0) != -1);
 

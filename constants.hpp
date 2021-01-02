@@ -4,12 +4,14 @@
 static const int BOARD_SIZE = 8,
           GRID_SIZE = 75,
           WINDOW_WIDTH = 600,
-          WINDOW_HEIGHT = 600,
+          WINDOW_HEIGHT = 700,
           RADIUS = 36,
           BACKLOG = 5,
           MAXLEN = 128,
           BUF_SIZE = 65, 
           HASH_CONST = 0xFFFF,
+          LEFT_TXT_OFFSET = 30,
+          LEFT_TXT_OFFSET_FINAL = 350,
           TCP_PORT = 9900;
 
 static const char SETUP_STR[BUF_SIZE + 1] = "00000000000000000000000000002100000012000000000000000000000000000",

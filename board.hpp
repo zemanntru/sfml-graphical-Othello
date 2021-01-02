@@ -6,8 +6,10 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <atomic>
 #include <cassert>
 #include <iostream>
+#include <sstream>
 #include "constants.hpp"
 #include "logic.hpp"
 
@@ -40,13 +42,17 @@ class Board {
         void GetSelfUpdate(int idx, int idy);
         int mBoard[BOARD_SIZE][BOARD_SIZE];
         int mPlayerType;
-        bool mAllowUpdate;
+        bool mGameOver;
+        std::atomic<bool>mAllowUpdate;
+        std::atomic<bool>mDone;
         sf::Color mColor;
+        sf::Font mFont;
         Graphics::Board mBackground;
         std::condition_variable mCond;
         std::mutex mMutex;                  // this mutex controls access to the board
         std::mutex mMutexGo;                // this mutex controls access to whether the process can output data.
         std::thread mDisplayThread;
+        std::thread mBotThread;
 };
 
 #endif

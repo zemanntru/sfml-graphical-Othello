@@ -6,6 +6,12 @@
 
 A first year Computer Engineering project for Introduction to C programming at the University of Toronto. This code was originally written in C, but refactored into C++ with SFML graphics and some code mechanics reworked to maintain academic integrity. The heuristic and evaluation patterns for edge pieces were inspired by the late 80s Othello engine BILL. Like BILL, this program entails Bayesian probability analysis during the precomputation of lookup tables. 
 
+#### Architecture
+
+This project follows the client-server model using C socket programming libraries. Once the server is launched, it waits until two clients have joined to start the game room. The client that joins first plays black. The server alternates receiving input from one client and sends the updated board to the other client. The server terminates once it has detected that neither clients has an available move. The client has one thread that actively receives data from the server and another thread to display the graphics and run the game logic. 
+
+<center><img src="./sample-game.png" alt="Diagram 1" ></img></center>
+
 #### How to Run this Code
 
 Download and extract the files to a directory of your choice. Run`make` to obtain two executables, `server` and `client`. Run `./server` on the current terminal to launch the server. This must be launched before the clients. Next, open another terminal and run `./client [bot | human]`. This client will play black. Repeat that command on a third terminal, and this client will play white. If the `bot` console argument is selected, the program will automatically update its interface after making the move. If `human` is selected, you must click on one of the semi-transparent tiles indicating valid moves. If there are no valid moves present for a client, their turn will be skipped. The server will terminate once there is no more valid moves on either side. Closing the GUI will terminate the client programs.

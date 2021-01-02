@@ -1,25 +1,32 @@
 #include "board.hpp"
 
+/**
+ * @brief Construct a new Graphics:: Board:: Board object
+ * This is done using the SFML vertext arrays to get the grid lines and background sufrace
+ */
+
 Graphics::Board::Board(){
     grid.setPrimitiveType(sf::Lines);
     grid.resize(2 * (BOARD_SIZE + BOARD_SIZE + 2));
     surface.setPrimitiveType(sf::Quads);
     surface.resize(4);
 
-    surface[0].position = sf::Vector2f(0, 0);
+    // position the four corners of the rectangle using and set them to green
+    surface[0].position = sf::Vector2f(0, 0); 
     surface[1].position = sf::Vector2f(BOARD_SIZE * GRID_SIZE, 0);
     surface[2].position = sf::Vector2f(BOARD_SIZE * GRID_SIZE, BOARD_SIZE * GRID_SIZE);
     surface[3].position = sf::Vector2f(0, BOARD_SIZE * GRID_SIZE);
     
     for (int i = 0; i < 4; i++) surface[i].color = sf::Color::Green;
     
-    for (int i = 0; i <= BOARD_SIZE; i++){
+    for (int i = 0; i <= BOARD_SIZE; i++)       // draw the vertical lines
+    {                                              
         sf::Vertex* ln =  &grid[2*i];
         ln[0].position = sf::Vector2f(0, i * GRID_SIZE);
         ln[1].position = sf::Vector2f(BOARD_SIZE * GRID_SIZE, i * GRID_SIZE);
         ln[0].color = ln[1].color = sf::Color::Black;
     }
-    for (int i = 0; i <= BOARD_SIZE; i++)
+    for (int i = 0; i <= BOARD_SIZE; i++)       // draw the horizontal lines
     {
         sf::Vertex* ln =  &grid[2*(i + BOARD_SIZE + 1)];
         ln[0].position = sf::Vector2f(i * GRID_SIZE, 0);
@@ -28,18 +35,32 @@ Graphics::Board::Board(){
     }
 }
 
-void Graphics::Board::draw(sf::RenderTarget& target, sf::RenderStates states) const
-{
-    states.transform *= getTransform();
+/**
+ * @brief 
+ * virtual draw function used by sprite classes
+ * @param target 
+ * @param states 
+ */
+void Graphics::Board::draw(sf::RenderTarget& target, sf::RenderStates states) const 
+{           
+    states.transform *= getTransform();                 
     target.draw(surface);
     target.draw(grid);
 }
 
+/**
+ * @brief Construct a new Board:: Board object
+ * 
+ * @param color The color of the client
+ * @param playerType HUMAN or BOT
+ */
+Board::Board(sf::Color color, int playerType) : mColor(color), mGameOver(false), mPlayerType(playerType){
+    
+    // set up the board
 
-Board::Board(sf::Color color, int playerType) : mColor(color), mPlayerType(playerType){
     for (int i = 0; i < BOARD_SIZE; i++) 
         for(int j = 0; j < BOARD_SIZE; j++) 
-            mBoard[i][j] = 0;
+            mBoard[i][j] = EMPTY;
         
     mBoard[3][3] = WHITE;
     mBoard[3][4] = BLACK;
@@ -51,47 +72,60 @@ Board::Board(sf::Color color, int playerType) : mColor(color), mPlayerType(playe
         mBoard[2][3] = POSBLACK;
         mBoard[4][5] = POSBLACK;
         mBoard[5][4] = POSBLACK;
-        mAllowUpdate = true;
+        mAllowUpdate = true;                // these booleans are set for black since it goes first
+        mDone = true;
     } else {
         mBoard[2][4] = POSWHITE;
         mBoard[4][2] = POSWHITE;
         mBoard[3][5] = POSWHITE;
         mBoard[5][3] = POSWHITE;
         mAllowUpdate = false;
+        mDone = false;
     }
-    if(mPlayerType == HUMAN)
+    assert(mFont.loadFromFile("Lato-Black.ttf")); 
+    
+    // launch the appropriate thread (interactive vs noninteractive ~ human vs bot)
+    if(mPlayerType == HUMAN) 
         mDisplayThread = std::thread{ &Board::RenderInteractiveBoard, this};
-    else
+    else 
         mDisplayThread = std::thread{ &Board::RenderNonInteractiveBoard, this};
 }
 
+/**
+ * @brief Destroy the Board:: Board object
+ * 
+ * Make sure that all the other threads are completed
+ * before the object is destroyed
+ * 
+ * mGameOver is set so the final scores can be displayed
+ */
+
 Board::~Board() {
-    int whiteScore = 0, blackScore = 0;
-    std::unique_lock<std::mutex> lock(mMutex);
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
-            if(mBoard[i][j] == WHITE) whiteScore++;
-            else if(mBoard[i][j] == BLACK) blackScore++;
-        }
-    }
-    lock.unlock();
-    if(whiteScore > blackScore) std::cout << "White wins: " << whiteScore << " - " << blackScore << std::endl;
-    else if(whiteScore < blackScore) std::cout << "Black wins: " << blackScore << " - " << whiteScore << std::endl;
-    else std::cout << "Draw!" << std::endl;
+    
+    mGameOver = true;
+    if(mBotThread.joinable()) mBotThread.join();
     mDisplayThread.join();
 }
 
+/**
+ * @brief Encode the current state of the board into a 64 char string
+ * the mCond variable blocks the this method until the board is updated if mAllowUpdate is true,
+ * and returns the subsequent state of the board.
+ * @return std::string 
+ */
 std::string Board::GetEncodedBoard() {
     std::unique_lock<std::mutex> goLock(mMutexGo);
     std::string ret = "";
 
-    if(mAllowUpdate == false) ret += "F";
-    else ret += "T";
-    mCond.wait(goLock, [&]{ return !mAllowUpdate; });
+    if(mAllowUpdate == false) ret += "F";                 // indicates that we don't have any moves on our turn
+    else ret += "T";                                      // we do have a move on this turn
+    mCond.wait(goLock, [this]{ return !mAllowUpdate; });  // don't bother blocking if we don't have any available moves
 
+    // wait for the bot to finish searching before proceeding
+    if(mBotThread.joinable()) mBotThread.join();
+
+    // this lock ensures that no other thread modifies the board while we are reading it
     std::unique_lock<std::mutex> lock(mMutex);
-    
-
     for(int i = 0; i < BOARD_SIZE; i++) {
         for(int j = 0; j < BOARD_SIZE; j++) {
             if(mBoard[i][j] == BLACK) ret += "1";
@@ -102,11 +136,17 @@ std::string Board::GetEncodedBoard() {
     return ret;
 }
 
+/**
+ * @brief Takes in an encoding of the board and updates the current board
+ * 
+ * @param src 
+ */
 void Board::ReceiveUpdate(const std::string& src){
     std::unique_lock<std::mutex> lock(mMutex);
-    uint128_t player = 0,
+    uint128_t player = 0, 
               opponent = 0;
-             
+
+    // the lock ensures that the board array is not modified by another thread when we are writing new data
     assert(src.length() == BOARD_SIZE*BOARD_SIZE);
     for(int i = 0; i < BOARD_SIZE; i++) {
         for(int j = 0; j < BOARD_SIZE; j++) {
@@ -117,6 +157,7 @@ void Board::ReceiveUpdate(const std::string& src){
                 opponent |= (1ULL<<((BOARD_SIZE - 1 - i)*BOARD_SIZE + BOARD_SIZE - 1 - j));
         }
     }
+    lock.unlock(); // we can release the lock since we aren't modifying the board array anymore
     if(mColor == sf::Color::White) 
         std::swap(player, opponent);
 
@@ -159,9 +200,10 @@ void Board::ReceiveUpdate(const std::string& src){
         t |= mask2 & (t >> 7), mask2 = mask & (mask2 >> 7));
     moves |= empty & (t >> 7);
 
-    if(moves) mAllowUpdate = true;
-    else mAllowUpdate = false;
+    if(moves) mAllowUpdate = mDone = true;      // if there are no moves our client cannot have new inputs
+    else mAllowUpdate = mDone = false;          
     
+    lock.lock();                                // lock the board as we write the available positions in our board array member
     while(moves) {
         int rem = __builtin_clzll(moves & -moves);
         if(mColor == sf::Color::Black)
@@ -172,9 +214,20 @@ void Board::ReceiveUpdate(const std::string& src){
     }
 }
 
+/**
+ * @brief
+ * Update the board by flipping the appropriate pieces after a piece has been placed.
+ * 
+ * @param idx the x coordinate of the board entry
+ * @param idy the y coordinate of the board entry
+ */
+
 void Board::GetSelfUpdate(int idx, int idy) {
+
     if (mColor == sf::Color::Black) assert(mBoard[idy][idx] == POSBLACK);
     else assert(mBoard[idy][idx] == POSWHITE);
+
+    // lock the board as we are reading data from the board array member
     std::unique_lock<std::mutex> lock(mMutex);
     uint128_t player = 0,
               opponent = 0,
@@ -190,6 +243,7 @@ void Board::GetSelfUpdate(int idx, int idy) {
             mBoard[i][j] = EMPTY;
         }
     }
+    lock.unlock();
     if (mColor == sf::Color::White) 
         std::swap(player, opponent);
 
@@ -228,12 +282,15 @@ void Board::GetSelfUpdate(int idx, int idy) {
         seq |= mask, mask = (mask >> 9) & 0x007F7F7F7F7F7F7F);
     if(mask & player) ret |= seq;
 
+    // update the bitboards
     player^=(ret|move);
     opponent^=ret;
 
     if (mColor == sf::Color::White) 
         std::swap(player, opponent);
 
+    lock.lock();
+    // write the new entries into our board array member
     while(player) {
         int rem = __builtin_clzll(player & -player);
         mBoard[rem / BOARD_SIZE][rem % BOARD_SIZE] = BLACK;
@@ -249,9 +306,16 @@ void Board::GetSelfUpdate(int idx, int idy) {
     mCond.notify_one();
 }
 
+/**
+ * @brief Use sfml libraries to render the sprites and the board background
+ * 
+ * @param window 
+ */
 void Board::DrawBoard(sf::RenderWindow& window) {
     window.draw(mBackground);
+    // this lock ensures the board doesn't change in the middle of rendering the pieces
     std::unique_lock<std::mutex> lock(mMutex);
+    int whiteScore = 0, blackScore = 0;
     for(int i = 0; i < BOARD_SIZE; i++) {
         for(int j = 0; j < BOARD_SIZE; j++) {
             if(mBoard[i][j] == BLACK) {
@@ -259,11 +323,13 @@ void Board::DrawBoard(sf::RenderWindow& window) {
                 disc.setFillColor(sf::Color::Black);
                 disc.setPosition(((float)j+0.5)*GRID_SIZE - RADIUS, ((float)i+0.5)*GRID_SIZE - RADIUS);
                 window.draw(disc);
+                blackScore++;
             } else if(mBoard[i][j] == WHITE) {
                 sf::CircleShape disc(RADIUS);
                 disc.setFillColor(sf::Color::White);
                 disc.setPosition(((float)j+0.5)*GRID_SIZE - RADIUS, ((float)i+0.5)*GRID_SIZE - RADIUS);
                 window.draw(disc);
+                whiteScore++;
             } else if(mPlayerType == HUMAN && mAllowUpdate && mBoard[i][j] == POSBLACK) {
                 sf::CircleShape disc(RADIUS);
                 disc.setFillColor((sf::Color){0,0,0,128});
@@ -277,11 +343,56 @@ void Board::DrawBoard(sf::RenderWindow& window) {
             }
         }
     }
+    lock.unlock();
+    std::string msgWhite = "Count White Tiles: " + std::to_string(whiteScore);
+    std::string msgBlack = "Count Black Tiles: " + std::to_string(blackScore);
+    sf::Text wText(msgWhite, mFont, 24);
+    sf::Text bText(msgBlack, mFont, 24);
+    wText.setPosition(LEFT_TXT_OFFSET, WINDOW_HEIGHT - 80);
+    bText.setPosition(LEFT_TXT_OFFSET, WINDOW_HEIGHT - 50);
+    bText.setFillColor(sf::Color::Black);
+    if(mGameOver) {
+
+        // only activated when mGameOver is set in the destructor
+        std::string wMsgOverText, bMsgOverText;
+        if(whiteScore > blackScore) {
+            wMsgOverText = "White wins! (";
+            bMsgOverText = "Black Lost! (";
+        }
+        else if(whiteScore < blackScore) {
+            wMsgOverText = "White lost! (";
+            bMsgOverText = "Black wins! (";
+        }
+        else {
+            wMsgOverText = "Draw! (";
+            bMsgOverText = "Draw! (";
+        }
+        std::string wsc, bsc;
+        std::stringstream sstr;
+        sstr << std::fixed << std::setprecision(2) 
+        << (double)whiteScore / (whiteScore + blackScore) << ' ' << (double)blackScore / (whiteScore + blackScore);
+        sstr >> wsc >> bsc;
+        wMsgOverText += wsc + "%)";
+        bMsgOverText += bsc + "%)";
+        sf::Text wOverText(wMsgOverText, mFont, 24);
+        sf::Text bOverText(bMsgOverText, mFont, 24);
+        wOverText.setPosition(LEFT_TXT_OFFSET_FINAL, WINDOW_HEIGHT - 80);
+        bOverText.setPosition(LEFT_TXT_OFFSET_FINAL, WINDOW_HEIGHT - 50);
+        bOverText.setFillColor(sf::Color::Black);
+        window.draw(wOverText);
+        window.draw(bOverText);
+    }
+    window.draw(wText);
+    window.draw(bText);
 }
 
+/**
+ * @brief Background GUI thread allows user to click on valid tiles to place the move
+ * Launched during the constructor
+ */
 void Board::RenderInteractiveBoard() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), 
-            "Othello", sf::Style::Titlebar | sf::Style::Close);
+            "Othello Human Client", sf::Style::Titlebar | sf::Style::Close);
 
     sf::CircleShape cursorTile(RADIUS);
     cursorTile.setFillColor(mColor);
@@ -298,16 +409,16 @@ void Board::RenderInteractiveBoard() {
                     break;
                 }
                 case sf::Event::MouseMoved: {
-                    int posx = event.mouseMove.x, 
+                    int posx = event.mouseMove.x,               // set the bounds so the cursor tile will always fit on the screen
                         posy = event.mouseMove.y;
 
-                    if (posx >  WINDOW_WIDTH - RADIUS)
-                        posx =  WINDOW_WIDTH - RADIUS;
+                    if (posx >  BOARD_SIZE*GRID_SIZE - RADIUS)
+                        posx =  BOARD_SIZE*GRID_SIZE - RADIUS;
                     else if (posx < RADIUS)
                         posx = RADIUS;
 
-                    if (posy > WINDOW_HEIGHT - RADIUS)
-                        posy = WINDOW_HEIGHT - RADIUS;
+                    if (posy > BOARD_SIZE*GRID_SIZE - RADIUS)
+                        posy = BOARD_SIZE*GRID_SIZE - RADIUS;
                     else if (posy < RADIUS)
                         posy = RADIUS;
 
@@ -327,6 +438,7 @@ void Board::RenderInteractiveBoard() {
                         else if (posy < RADIUS)
                             posy = RADIUS;
                         
+                        // only updates when the user clicks on a valid location on their turn
                         if ((mColor == sf::Color::Black && mBoard[posy/GRID_SIZE][posx/GRID_SIZE] == POSBLACK) || 
                             (mColor == sf::Color::White && mBoard[posy/GRID_SIZE][posx/GRID_SIZE] == POSWHITE)) {
                             GetSelfUpdate(posx/GRID_SIZE, posy/GRID_SIZE);
@@ -343,9 +455,14 @@ void Board::RenderInteractiveBoard() {
     }
 }
 
+/**
+ * @brief Launches the background thread for the bot player
+ * The only user action this window takes is closing the GUI
+ */
+
 void Board::RenderNonInteractiveBoard() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), 
-            "Othello", sf::Style::Titlebar | sf::Style::Close);
+            "Othello Bot Client", sf::Style::Titlebar | sf::Style::Close);
     GameCPU::ZemanntruBot bot(mColor == sf::Color::Black ? 'B' : 'W');
     while(window.isOpen())
     {
@@ -362,8 +479,14 @@ void Board::RenderNonInteractiveBoard() {
             }
         }
         if(mAllowUpdate) {
-            std::pair<int,int>botMove = bot.chooseMove(mBoard);
-            GetSelfUpdate(botMove.first, botMove.second);
+            if(mDone) {
+                mDone = false;
+                // launch new thread with the bot search function.
+                mBotThread = std::thread([&bot, this]{
+                    std::pair<int,int>botMove = bot.chooseMove(mBoard);
+                    GetSelfUpdate(botMove.first, botMove.second);
+                });
+            }
         }
         window.clear(sf::Color(192,192,192));
         DrawBoard(window);

@@ -4,28 +4,6 @@ GameCPU::ZemanntruBot::ZemanntruBot(char color) : mDistributionTable(64, std::ve
 
 GameCPU::ZemanntruBot::~ZemanntruBot() {}
 
-void GameCPU::ZemanntruBot::DisplayBitBoard(int128_t player, int128_t opponent)
-{  //Display binary strings in an array configuration
-    int128_t blackSq = player, 
-             whiteSq = opponent;
-
-    if(mColor == 'W') 
-        std::swap(blackSq, whiteSq);
-
-    std::cout << "  "; 
-    for(int i = 0; i < BOARD_SIZE; ++i) std::cout << (char)('a' + i);
-    std::cout << std::endl;
-    for(int i = 0; i < BOARD_SIZE; ++i){
-        std::cout << (char)('a' + i) << " ";
-        for(int j = 0; j < BOARD_SIZE; ++j){
-            if(whiteSq & 1ULL<< ((BOARD_SIZE - i - 1) * BOARD_SIZE + BOARD_SIZE - j - 1)) std::cout << "W ";
-            else if(blackSq & 1ULL<< ((BOARD_SIZE - i - 1) * BOARD_SIZE + BOARD_SIZE - j - 1)) std::cout << "B ";
-            else std::cout << ". ";
-        }
-        std::cout << std::endl;
-    }
-}
-
 int128_t GameCPU::ZemanntruBot::getMoveUpdate(int128_t move, int128_t player, int128_t opponent)
 {
     int128_t mask, seq, ret = 0;
@@ -331,7 +309,7 @@ std::pair<int,int> GameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][BOA
     }
     if(mColor == 'W') std::swap(player, opponent);
 
-    int128_t rev, bestMove, combo = player | opponent;
+    int128_t bestMove, combo = player | opponent;
     int stage = __builtin_popcountll(combo); //stage is the number of pieces present on the board
 
     mTimeStart = clock();
@@ -353,13 +331,6 @@ std::pair<int,int> GameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][BOA
         if(mLookupTable[customHash(player, opponent)].bitBoard == (bitset128_128){player,opponent}) // check if entries actually match
             bestMove = mLookupTable[customHash(player, opponent)].val.fbits;
     }
-    
-    //Reset the transposition table
-    //int timeEnd = clock();
-    //double elapsed = (double)(timeEnd - mTimeStart) / CLOCKS_PER_SEC;
-    //std::cout << std::fixed << std::setprecision(3) << "The time take for the operation is: " << elapsed * 1000 << "ms" << std::endl;
-    rev = getMoveUpdate(bestMove, player, opponent);
-
     int ret = __builtin_clzll(bestMove);
     return {ret % 8, ret / 8};
 }
