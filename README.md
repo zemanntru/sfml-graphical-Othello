@@ -41,4 +41,6 @@ Some key ideas/features used in the bot logic were:
 - **Monte Carlo Search** - Gaining greater search depth with the risk of missing a critical move. 
 
 ### Citation:
-Lee, Kai-Fu and Sanjoy Mahajan. “BILL : a table-based, knowledge-intensive othello program.” (1986). https://www.semanticscholar.org/paper/BILL-%3A-a-table-based%2C-knowledge-intensive-othello-Lee-Mahajan/f7ab15736ecc79452aa4546cf8d7f5aa94d6afa0
+**Implementing the Othello bot logic** - Lee, Kai-Fu and Sanjoy Mahajan. “BILL : a table-based, knowledge-intensive othello program.” (1986). https://www.semanticscholar.org/paper/BILL-%3A-a-table-based%2C-knowledge-intensive-othello-Lee-Mahajan/f7ab15736ecc79452aa4546cf8d7f5aa94d6afa0
+
+**Implementing the client-server model** - https://beej.us/guide/bgnet/html/#client-server-background
