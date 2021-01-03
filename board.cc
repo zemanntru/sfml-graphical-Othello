@@ -370,7 +370,7 @@ void Board::DrawBoard(sf::RenderWindow& window) {
         std::string wsc, bsc;
         std::stringstream sstr;
         sstr << std::fixed << std::setprecision(2) 
-        << (double)whiteScore / (whiteScore + blackScore) << ' ' << (double)blackScore / (whiteScore + blackScore);
+        << (double)whiteScore * 100/ (whiteScore + blackScore) << ' ' << (double)blackScore * 100 / (whiteScore + blackScore);
         sstr >> wsc >> bsc;
         wMsgOverText += wsc + "%)";
         bMsgOverText += bsc + "%)";

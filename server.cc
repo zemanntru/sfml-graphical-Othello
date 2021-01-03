@@ -58,6 +58,7 @@ int main() {
     int playerTwofd  = accept(sockfd, (struct sockaddr*)&clientInfo2, &len2);
     assert(playerTwofd != -1);
 
+    std::cout << "Connection to the clients established. Launch game room." << std::endl;
     // The first player to join gets black while the second player is white.
     assert(send(playerOnefd, "B", 1, 0) != -1);
     assert(send(playerTwofd, "W", 1, 0) != -1);

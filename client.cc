@@ -41,14 +41,14 @@ int main(int argc, char *argv[]) {
     assert(connect(sockfd, (struct sockaddr *)&serverInfo, sizeof serverInfo) != -1);
     memset(buffer, 0, MAXLEN);
     assert(recv(sockfd, &buffer, 1, 0) != -1);
-    
+   
     if(!strcmp("human", argv[1]))
         playerType = HUMAN;
     else if(!strcmp("bot", argv[1]))
         playerType = BOT;
     else
         assert(false);
-    
+    std::cout << "Established connection to server" << std::endl;
     Board myBoard((buffer[0]=='B' ? sf::Color::Black : sf::Color::White), playerType);
 
     // The client model alternates between receiving a call and sending out a call
