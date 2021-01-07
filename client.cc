@@ -46,8 +46,7 @@ int main(int argc, char *argv[]) {
         playerType = HUMAN;
     else if(!strcmp("bot", argv[1]))
         playerType = BOT;
-    else
-        assert(false);
+        
     std::cout << "Established connection to server" << std::endl;
     Board myBoard((buffer[0]=='B' ? sf::Color::Black : sf::Color::White), playerType);
 

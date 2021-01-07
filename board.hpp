@@ -11,7 +11,7 @@
 #include <iostream>
 #include <sstream>
 #include "constants.hpp"
-#include "logic.hpp"
+#include "zemanntrubot.hpp"
 
 typedef unsigned __int128 uint128_t;
 
@@ -38,6 +38,7 @@ class Board {
     private:
         void RenderInteractiveBoard();
         void RenderNonInteractiveBoard();
+        void Experimental();
         void DrawBoard(sf::RenderWindow& window);
         void GetSelfUpdate(int idx, int idy);
         int mBoard[BOARD_SIZE][BOARD_SIZE];

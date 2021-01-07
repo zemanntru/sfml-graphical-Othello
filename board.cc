@@ -87,7 +87,7 @@ Board::Board(sf::Color color, int playerType) : mColor(color), mGameOver(false),
     // launch the appropriate thread (interactive vs noninteractive ~ human vs bot)
     if(mPlayerType == HUMAN) 
         mDisplayThread = std::thread{ &Board::RenderInteractiveBoard, this};
-    else 
+    else if(mPlayerType == BOT)
         mDisplayThread = std::thread{ &Board::RenderNonInteractiveBoard, this};
 }
 
@@ -463,7 +463,7 @@ void Board::RenderInteractiveBoard() {
 void Board::RenderNonInteractiveBoard() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), 
             "Othello Bot Client", sf::Style::Titlebar | sf::Style::Close);
-    GameCPU::ZemanntruBot bot(mColor == sf::Color::Black ? 'B' : 'W');
+    MyGameCPU::ZemanntruBot bot(mColor == sf::Color::Black ? 'B' : 'W');
     while(window.isOpen())
     {
         sf::Event event;
