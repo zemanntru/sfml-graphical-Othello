@@ -1,7 +1,7 @@
 LIBS= -lsfml-graphics -lsfml-window -lsfml-system -pthread
 CC = g++ -std=c++17
 
-CLIENT_SRCS = board.cc client.cc zemanntrubot.cc logic.cc
+CLIENT_SRCS = board.cc client.cc zemanntrubot.cc 
 SERVER_SRCS = server.cc
 
 OBJS_CLIENT = $(patsubst %.cc,%.o,$(CLIENT_SRCS))
