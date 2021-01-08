@@ -4,7 +4,6 @@
 #pragma GCC optimize("O3")
 #pragma GCC optimize("unroll-loops")
 
-#include "edgetable.hpp"
 #include "constants.hpp"
 #include <iostream>
 #include <cstdint>

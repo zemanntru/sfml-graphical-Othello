@@ -1,3 +1,4 @@
+#include "edgetable.hpp"
 #include "zemanntrubot.hpp"
 
 MyGameCPU::ZemanntruBot::ZemanntruBot(char color) : mColor(color){}
@@ -67,10 +68,11 @@ int128_t MyGameCPU::ZemanntruBot::getMoveUpdate(int128_t move, int128_t player, 
 
 int128_t MyGameCPU::ZemanntruBot::edgeStabilityEvaluation(int128_t player, int128_t opponent)
 { //Return pattern based edge configuration evaluations 
-    return edgeTable[getTopEdgeKey(player, opponent)] + //A1A8 
+    double sum = edgeTable[getTopEdgeKey(player, opponent)] + //A1A8 
         edgeTable[getRightEdgeKey(player, opponent)] + //H1H8
         edgeTable[getBottomEdgeKey(player, opponent)] + //A1H1
         edgeTable[getLeftEdgeKey(player, opponent)];  //A8H8
+    return (int128_t)sum;
 }
 
 int128_t MyGameCPU::ZemanntruBot::potentialMobilityEvaluation(int128_t player, int128_t opponent)
@@ -98,8 +100,8 @@ int128_t MyGameCPU::ZemanntruBot::mobilityEvaluation(int128_t player, int128_t o
 
 int128_t MyGameCPU::ZemanntruBot::evaluateBoard(int128_t player, int128_t opponent)
 {   //Dynamic Heurisitc evaluation function
-    int128_t sum = 0, stage = __builtin_popcountll(player | opponent), CMOBILITY = 30000 + 75 * stage, PMOBILITY = 26000 + 45 * stage, CEDGE = 2000 + 25 * stage;
-    if(stage > 35) CMOBILITY = 32625 + 50 * stage, PMOBILITY = 24575 - 100 * stage;
+    int128_t sum = 0, stage = __builtin_popcountll(player | opponent), 
+    CMOBILITY = 61000 + 75 * stage, PMOBILITY = 54000 + 45 * stage, CEDGE = 1000 + 25 * stage;
     if(stage > 61) CMOBILITY = 2987000; //Try to force endgame move
     sum += CEDGE * edgeStabilityEvaluation(player, opponent) + 
     PMOBILITY *  potentialMobilityEvaluation(player, opponent) + CMOBILITY * mobilityEvaluation(player, opponent);
@@ -363,7 +365,6 @@ std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][B
         bestMove = move;
         bFirst = false;
     }
-    std::cout << std::fixed << "time taken for the operation: " << ((double)clock() - mTimeStart) / CLOCKS_PER_SEC << std::endl;
     int ret = __builtin_clzll(bestMove);
     return {ret % 8, ret / 8};
 }
