@@ -20,4 +20,5 @@ server: $(OBJS_SERVER)
 
 clean:
 	@echo "**Removing object files and executable**"
-	rm -f *.o all core
+	rm -f *.o client server
+	
