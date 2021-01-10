@@ -21,17 +21,18 @@
 
 enum { UNSTABLE, ALONE, SEMISTABLE, UNANCHORED_STABLE, STABLE1, STABLE2, STABLE3};
 const int staticTable[7][4] = {
-    { 0, -50, 20, 15 },             // unstable
-    { 0, -75, -25, -50},            // alone
-    { 0, -125, 100, 100},           // semi-stable
-    { 0, 0, 300, 200},              // unanchored stable
+    { 0, -150, -100, -150 },             // unstable
+    { 0, -675, -425, -300},            // alone
+    { 0, -125, -50, -50},           // semi-stable
+    { 0, 0, 400, 500},              // unanchored stable
     { 0, 800, 800, 800},            // stable-1
     { 0, 1000, 1000, 1000},         // stable-2
     { 800, 1200, 1000, 1000}         // stable-3
 };
+
 const int edgeIdx[8] = { 0, 1, 2, 3, 3, 2, 1, 0 };
-std::unordered_map<int, double>memodict;
 std::unordered_map<int,double> memo;
+
 
 int getMoveUpdate(int move, int player, int opponent)
 {
@@ -252,29 +253,6 @@ void computeStaticScores(){
     }
 }
 
-double sampleMinimax(int player, int opponent)
-{
-    int moves = getAvailableMoves(player, opponent);
-    bool turnOpponent = false;
-    double best = -10000;
-    if(!moves)
-    {   //player has no moves 
-        turnOpponent = 1; 
-        moves = getAvailableMoves(opponent, player);
-        if(moves) std::swap(player, opponent);
-        else return memo[player<<8|opponent];
-        
-    }
-    while(moves) {
-        int t = moves & -moves,
-        rev = getMoveUpdate(t, player, opponent);
-        best = std::max(best, -sampleMinimax(opponent^rev, player^(rev|t)));
-        moves &= moves - 1;
-    }
-    if(turnOpponent) best = -best;
-    return best;
-}
-
 // player and opponent are 10 bit numbers
 double probabilisticMinimax(int player, int opponent)
 {
@@ -291,7 +269,7 @@ double probabilisticMinimax(int player, int opponent)
     std::vector<double>legal;
     std::vector<std::pair<double,double>>possible;
 
-    legal.push_back(-sampleMinimax((opponent>>1) & 0xFF, (player>>1) & 0xFF));
+    legal.push_back(memo[((player>>1) & 0xFF)<<8|((opponent>>1) & 0xFF)]);
     
     while(legalMoves) {
         int t = legalMoves & -legalMoves,
@@ -351,7 +329,8 @@ int main() {
             else if(ss[j] == '2')
                 opponent |= (1<<j);
         }
-        std::cout << std::fixed << std::setprecision(3) << probabilisticMinimax(player, opponent) << ", ";
+        std::cout << std::fixed << std::setprecision(3) << probabilisticMinimax(player, opponent);
+        if(i < 59048) std::cout << ", ";
     }
     std::cout << "};";
     return 0;
