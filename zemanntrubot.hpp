@@ -47,6 +47,7 @@ namespace MyGameCPU {
             ZemanntruBot(const ZemanntruBot& src) = delete;
             ZemanntruBot& operator=(const ZemanntruBot& rhs) = delete;
             std::pair<int,int> chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE]);
+            
         private:
             int mTimeStart;
             char mColor;
@@ -60,11 +61,13 @@ namespace MyGameCPU {
             int getRightEdgeKey(int128_t player, int128_t opponent);
             int getBottomEdgeKey(int128_t player, int128_t opponent);
             int getLeftEdgeKey(int128_t player, int128_t opponent);
+            int128_t PieceEvaluation(int128_t player, int128_t opponent);
             int128_t endgameEvaluation(int128_t player, int128_t opponent);
             int128_t edgeStabilityEvaluation(int128_t player, int128_t opponent);
             int128_t potentialMobilityEvaluation(int128_t player, int128_t opponent);
             int128_t mobilityEvaluation(int128_t player, int128_t opponent);
             int128_t evaluateBoard(int128_t player, int128_t opponent);
+            void DisplayBitBoard(int128_t black, int128_t white);
     };
 }
 #endif
