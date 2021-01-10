@@ -463,7 +463,7 @@ void Board::RenderInteractiveBoard() {
 void Board::RenderNonInteractiveBoard() {
     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), 
             "Othello Bot Client", sf::Style::Titlebar | sf::Style::Close);
-    MyGameCPU::ZemanntruBot bot(mColor == sf::Color::Black ? 'B' : 'W');
+    MyGameCPU::ZemanntruBot bot(mColor == sf::Color::Black ? 'B' : 'W', TIME_LIMIT);
     while(window.isOpen())
     {
         sf::Event event;

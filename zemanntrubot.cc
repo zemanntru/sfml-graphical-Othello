@@ -1,7 +1,7 @@
 #include "edgetable.hpp"
 #include "zemanntrubot.hpp"
 
-MyGameCPU::ZemanntruBot::ZemanntruBot(char color) : mColor(color){}
+MyGameCPU::ZemanntruBot::ZemanntruBot(char color, double timeLimit) : mColor(color), mMaxTimeAllocation(timeLimit){}
 
 MyGameCPU::ZemanntruBot::~ZemanntruBot() {}
 
@@ -202,7 +202,7 @@ int128_t MyGameCPU::ZemanntruBot::evaluateBoard(int128_t player, int128_t oppone
 {   //Dynamic Heurisitc evaluation function
     int128_t sum = 0, stage = __builtin_popcountll(player | opponent);
     int128_t CMOBILITY = 61000 + 7500 * stage,  PMOBILITY = 55000 + 5000 * stage, CEDGE = 2000 + 100 * stage;
-    if(stage == 63) CMOBILITY = 1050000;
+    if(stage == 64) return endgameEvaluation(player, opponent);
     sum += CEDGE * edgeStabilityEvaluation(player, opponent) 
     + PMOBILITY *  potentialMobilityEvaluation(player, opponent) + CMOBILITY * mobilityEvaluation(player, opponent);
     return sum;
@@ -210,9 +210,12 @@ int128_t MyGameCPU::ZemanntruBot::evaluateBoard(int128_t player, int128_t oppone
 
 int128_t MyGameCPU::ZemanntruBot::endgameEvaluation(int128_t player, int128_t opponent)
 {   //Game winning evaluation
-     int128_t playerCnt = __builtin_popcountll(player),
-             opponentCnt = __builtin_popcountll(opponent);
-    return playerCnt > opponentCnt ? (1LL<<61) : -(1LL<<61);
+    int128_t score = 1;
+    if(__builtin_popcountll(player) > __builtin_popcountll(opponent))
+        return (score<<100);
+    else
+        return -(score<100);
+    
 }
 
 int128_t MyGameCPU::ZemanntruBot::negaMax(int128_t player, int128_t opponent, int depth, int128_t alpha, int128_t beta)
@@ -248,16 +251,16 @@ int128_t MyGameCPU::ZemanntruBot::negaMax(int128_t player, int128_t opponent, in
     return best;
 }
 
-int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, bool bRoot, bool clear, int depth, int128_t alpha, int128_t beta)
+int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, bool bRoot, int depth, int128_t alpha, int128_t beta, std::vector<uint64_t>& numNodes)
 {   
-    if((((double)clock() - mTimeStart) / CLOCKS_PER_SEC) > TIME_LIMIT)
-        return TIMEOUT;
-
     int128_t a = alpha;
+    if(numNodes.size())
+        ++numNodes[depth];
+
     if(depth == 0) 
         return evaluateBoard(player, opponent);
     else {
-        if(clear) mLookupTable.clear();
+        if(bRoot) mLookupTable.clear();
         else if(mLookupTable.count(player << 64 | opponent) != 0) // an empty flag indicates that this bucket is empty
         {    
             memoEntry lookup = mLookupTable[player << 64 | opponent];
@@ -316,19 +319,12 @@ int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, 
        
         //Null window search
         if(init) 
-            test = -negaScout(opponent^rev, player^(rev|t), false, false, depth - 1, -beta, -alpha);
+            test = -negaScout(opponent^rev, player^(rev|t), false, depth - 1, -beta, -alpha, numNodes);
         else {
-            test = -negaScout(opponent^rev, player^(rev|t), false, false, depth - 1, -alpha - 1, -alpha);
-            
-            if(test == TIMEOUT || -test == TIMEOUT)
-                return TIMEOUT;
+            test = -negaScout(opponent^rev, player^(rev|t), false, depth - 1, -alpha - 1, -alpha, numNodes);
             if(alpha < test && test < beta) 
-                test = -negaScout(opponent^rev, player^(rev|t), false, false, depth - 1, -beta, -test);
+                test = -negaScout(opponent^rev, player^(rev|t), false, depth - 1, -beta, -test, numNodes);
         }
-        
-        if(test == TIMEOUT || -test == TIMEOUT)
-            return TIMEOUT;
-        
         if(test > alpha){
             alpha = test;
             bestMove = t;
@@ -351,14 +347,16 @@ std::vector<int128_t> MyGameCPU::ZemanntruBot::getMoveOrdering(int128_t moves, i
     std::vector<int128_t>ord;
     while(x) {
         int128_t t = x & -x, 
-                 rev = getMoveUpdate(t, player, opponent);
+                 rev = getMoveUpdate(t, player, opponent),
+                 p = player^(rev|t),
+                 o = opponent^rev;
 
-        memo.push_back({t, __builtin_popcountll(rev)});
+        memo.push_back({t, -evaluateBoard(o, p) });
         x &= x - 1;
     }
     std::sort(memo.begin(), memo.end(),
          [](const std::pair<int128_t, int128_t>&a, const std::pair<int128_t, int128_t>&b)
-          { return a.second < b.second; });
+          { return a.second > b.second; });
 
     for(const auto &v: memo) ord.push_back(v.first);
     return ord;
@@ -459,9 +457,84 @@ void MyGameCPU::ZemanntruBot::DisplayBitBoard(int128_t black, int128_t white)
     std::cout << std::endl;
 }
 
-std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE]) {
+std::pair<double, double> MyGameCPU::ZemanntruBot::estimateBranchingFactor(int depth, std::vector<uint64_t>&numNodes) {
     
-    int128_t player = 0, opponent = 0, bestMove;
+    double playerBranchingFactor = 0,
+           opponentBranchingFactor = 0;
+
+    int playerLevels = 0,
+        opponentLevels = 0;
+
+    assert(numNodes.size() > depth);
+    for(int i = 0; i < depth; i += 2) {
+        playerBranchingFactor += (double)numNodes[i] / numNodes[i + 1];             // recall we are decrementing the depth, so we divide the depth level one higher
+        ++playerLevels;
+    }
+    for(int i = 1; i < depth; i += 2) {
+        opponentBranchingFactor += (double)numNodes[i] / numNodes[i + 1];
+        ++opponentLevels;
+    }
+    if(playerLevels) playerBranchingFactor /= playerLevels;
+    else playerBranchingFactor = 0;
+    
+    if(opponentLevels) opponentBranchingFactor /= opponentLevels;
+    else opponentBranchingFactor = 0;
+
+    return std::make_pair(playerBranchingFactor, opponentBranchingFactor);
+}
+
+int MyGameCPU::ZemanntruBot::estimateMaximumSearchDepth(int128_t player, int128_t opponent, double timeLimit) {
+
+    int remainDepth = 64 - __builtin_popcountll(player | opponent), 
+        testDepth = std::min(6, remainDepth), 
+        maxDepth = 0;
+    double elapsed, timePerNode, timeCounter = 0;
+    bool parity = true;
+
+    uint64_t nodesVisited, numCurLevel = 1;
+    std::vector<uint64_t>numNodes(testDepth + 1, 0);
+
+    double timeStart = clock();
+    negaScout(player, opponent, true, testDepth, -(1LL<<50), (1LL<<50), numNodes);
+    elapsed = ((double)clock() - timeStart) / CLOCKS_PER_SEC;
+    mMaxTimeAllocation -= elapsed;
+
+    assert(mMaxTimeAllocation > 0);
+
+    std::pair<double, double>branchingFactors = estimateBranchingFactor(testDepth, numNodes);
+    nodesVisited = std::accumulate(numNodes.begin(), numNodes.end(), 0);
+    timePerNode = elapsed / nodesVisited;
+
+    for(int i = 0; i <= remainDepth; ++i) {
+        timeCounter += numCurLevel * timePerNode;
+        numCurLevel *= (parity ? branchingFactors.first : branchingFactors.second);
+        parity = !parity;
+        if(timeCounter > timeLimit) {
+            return std::min(remainDepth, std::max(maxDepth - 1, 0));
+        } else
+            ++maxDepth;
+    }
+    return remainDepth;
+}
+
+int MyGameCPU::ZemanntruBot::allocateSearchDepth(int128_t player, int128_t opponent) 
+{
+    double timeLimit;
+    int128_t combine = player | opponent;
+    int stage = __builtin_popcountll(combine), 
+    empty = __builtin_popcountll(~combine & 0xFFFFFFFFFFFFFFFF);
+    assert(mMaxTimeAllocation > 0);
+    if(stage < 48) timeLimit = 2 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
+    else timeLimit = SAFETY_FACTOR * mMaxTimeAllocation;                // endgame search, try to go deep as possible
+    return estimateMaximumSearchDepth(player, opponent, timeLimit);
+}
+
+std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE]) {
+
+    // main driver function to get the search move
+    
+    // Extract the bitboard from the array
+    int128_t player = 0, opponent = 0;
     for(int i = 0; i < BOARD_SIZE; i++) {
         for(int j = 0; j < BOARD_SIZE; j++) {
             if(board[i][j] == BLACK) 
@@ -470,19 +543,20 @@ std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][B
                 opponent |= (1ULL<<((BOARD_SIZE - 1 - i)*BOARD_SIZE + BOARD_SIZE - 1 - j));
         } 
     }
+
     if(mColor == 'W') std::swap(player, opponent);
-    int stage = __builtin_popcountll(player|opponent);
+    int stage = __builtin_popcountll(player|opponent),
+        depth = allocateSearchDepth(player, opponent);
+
     mTimeStart = clock();
-    bool bFirst = true;
-    int maxDepth = 0;
-    for(int depth = std::min(6, 64 - stage); depth <= 64 - stage; ++depth) {
-        int128_t move = negaScout(player, opponent, true, bFirst, depth, -(1LL<<50), (1LL<<50)); //Search function
-        if(move == TIMEOUT)
-            break;
-        bestMove = move;
-        maxDepth = depth;
-        bFirst = false;
-    }
+    std::vector<uint64_t>v;
+    std::cout << "Target search depth: " << depth << std::endl;
+    int128_t bestMove = negaScout(player, opponent, true, depth, -(1LL<<50), (1LL<<50), v); //Search function
+
+    // Find out how much time has passed
+    double elapsed = (double)(clock() - mTimeStart) / CLOCKS_PER_SEC;
+    mMaxTimeAllocation -= elapsed;
+    assert(mMaxTimeAllocation > 0);
     int ret = __builtin_clzll(bestMove);
     int128_t rev = getMoveUpdate(bestMove, player, opponent);
     player ^= (rev | bestMove);
@@ -492,7 +566,8 @@ std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][B
     DisplayBitBoard(player, opponent);
 
     std::cout << "My bot places at: " << (char)('A' + ret % 8) << (char)('1' + ret / 8) << " in " 
-    << std::fixed << std::setprecision(3) << 1000 * (double)(clock() - mTimeStart) / CLOCKS_PER_SEC << "ms" << std::endl;
+    << std::fixed << std::setprecision(3) << elapsed << "s" << std::endl;
+    std::cout << "Remaining time: " << mMaxTimeAllocation << "s" << std::endl;
     std::cout << "==================================" << std::endl << std::endl;
     
     return {ret % 8, ret / 8};
