@@ -16,10 +16,6 @@ This project follows the client-server model using C socket programming librarie
 
 Download and extract the files to a directory of your choice. Run`make` to obtain two executables, `server` and `client`. Run `./server` on the current terminal to launch the server. This must be launched before the clients. Next, open another terminal and run `./client [bot | human]`. This client will play black. Repeat that command on a third terminal, and this client will play white. If the `bot` console argument is selected, the program will automatically update its interface after making the move. If `human` is selected, you must click on one of the semi-transparent tiles indicating valid moves. If there are no valid moves present for a client, their turn will be skipped. The server will terminate once there is no more valid moves on either side. Closing the GUI will terminate the client programs.
 
-#### Project Submission 
-
-This program ranked 2nd out of 75 Othello programs played pairwise. The program is required to provide a move update within 1.0s. Points were based on victory piece ratio, capped at 2. A loss gives no points. The program was submitted in one C source code file.
-
 ### Mechanics 
 
 Some key ideas/features used in the bot logic were:
