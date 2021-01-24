@@ -214,7 +214,7 @@ int128_t MyGameCPU::ZemanntruBot::endgameEvaluation(int128_t player, int128_t op
     if(__builtin_popcountll(player) > __builtin_popcountll(opponent))
         return (score<<100);
     else
-        return -(score<100);
+        return -(score<<100);
     
 }
 
@@ -524,7 +524,7 @@ int MyGameCPU::ZemanntruBot::allocateSearchDepth(int128_t player, int128_t oppon
     int stage = __builtin_popcountll(combine), 
     empty = __builtin_popcountll(~combine & 0xFFFFFFFFFFFFFFFF);
     assert(mMaxTimeAllocation > 0);
-    if(stage < 48) timeLimit = 2 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
+    if(stage < 46) timeLimit = 3 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
     else timeLimit = SAFETY_FACTOR * mMaxTimeAllocation;                // endgame search, try to go deep as possible
     return estimateMaximumSearchDepth(player, opponent, timeLimit);
 }
