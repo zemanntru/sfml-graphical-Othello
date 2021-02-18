@@ -201,9 +201,9 @@ int128_t MyGameCPU::ZemanntruBot::mobilityEvaluation(int128_t player, int128_t o
 int128_t MyGameCPU::ZemanntruBot::evaluateBoard(int128_t player, int128_t opponent)
 {   //Dynamic Heurisitc evaluation function
     int128_t sum = 0, stage = __builtin_popcountll(player | opponent);
-    int128_t CMOBILITY = 157000 + 18500 * stage,  PMOBILITY = 105000 + 16000 * stage, CCOUNT = 250000 + 5000 * stage, CEDGE = 5000 + 100 * stage;
+    int128_t CMOBILITY = 147000 + 19500 * stage,  PMOBILITY = 55000 + 12000 * stage, CCOUNT = 550000 + 3000 * stage, CEDGE = 7000 + 100 * stage;
     if(stage == 64) return endgameEvaluation(player, opponent);
-    sum += CEDGE * edgeStabilityEvaluation(player, opponent) + CCOUNT * PieceEvaluation(player, opponent) + 
+    sum += CEDGE * edgeStabilityEvaluation(player, opponent) - CCOUNT * PieceEvaluation(player, opponent) + 
     + PMOBILITY *  potentialMobilityEvaluation(player, opponent) + CMOBILITY * mobilityEvaluation(player, opponent);
     return sum;
 }
