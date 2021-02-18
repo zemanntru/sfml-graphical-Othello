@@ -188,7 +188,7 @@ int128_t MyGameCPU::ZemanntruBot::potentialMobilityEvaluation(int128_t player, i
 int128_t MyGameCPU::ZemanntruBot::PieceEvaluation(int128_t player, int128_t opponent){
     int128_t playerCnt = __builtin_popcountll(player),
              opponentCnt = __builtin_popcountll(opponent);
-    return (playerCnt - opponentCnt) / (playerCnt + opponentCnt + 2);
+    return 100 * (playerCnt - opponentCnt) / (playerCnt + opponentCnt + 2);
 }
 
 int128_t MyGameCPU::ZemanntruBot::mobilityEvaluation(int128_t player, int128_t opponent)
@@ -201,9 +201,9 @@ int128_t MyGameCPU::ZemanntruBot::mobilityEvaluation(int128_t player, int128_t o
 int128_t MyGameCPU::ZemanntruBot::evaluateBoard(int128_t player, int128_t opponent)
 {   //Dynamic Heurisitc evaluation function
     int128_t sum = 0, stage = __builtin_popcountll(player | opponent);
-    int128_t CMOBILITY = 61000 + 7500 * stage,  PMOBILITY = 55000 + 5000 * stage, CEDGE = 2000 + 100 * stage;
+    int128_t CMOBILITY = 157000 + 18500 * stage,  PMOBILITY = 105000 + 16000 * stage, CCOUNT = 250000 + 5000 * stage, CEDGE = 5000 + 100 * stage;
     if(stage == 64) return endgameEvaluation(player, opponent);
-    sum += CEDGE * edgeStabilityEvaluation(player, opponent) 
+    sum += CEDGE * edgeStabilityEvaluation(player, opponent) + CCOUNT * PieceEvaluation(player, opponent) + 
     + PMOBILITY *  potentialMobilityEvaluation(player, opponent) + CMOBILITY * mobilityEvaluation(player, opponent);
     return sum;
 }
@@ -486,7 +486,7 @@ std::pair<double, double> MyGameCPU::ZemanntruBot::estimateBranchingFactor(int d
 int MyGameCPU::ZemanntruBot::estimateMaximumSearchDepth(int128_t player, int128_t opponent, double timeLimit) {
 
     int remainDepth = 64 - __builtin_popcountll(player | opponent), 
-        testDepth = std::min(6, remainDepth), 
+        testDepth = std::min(8, remainDepth), 
         maxDepth = 0;
     double elapsed, timePerNode, timeCounter = 0;
     bool parity = true;
@@ -524,9 +524,9 @@ int MyGameCPU::ZemanntruBot::allocateSearchDepth(int128_t player, int128_t oppon
     int stage = __builtin_popcountll(combine), 
     empty = __builtin_popcountll(~combine & 0xFFFFFFFFFFFFFFFF);
     assert(mMaxTimeAllocation > 0);
-    if(stage < 46) timeLimit = 3 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
+    if(stage < 50) timeLimit = 3 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
     else timeLimit = SAFETY_FACTOR * mMaxTimeAllocation;                // endgame search, try to go deep as possible
-    return estimateMaximumSearchDepth(player, opponent, timeLimit);
+    return std::min(11, estimateMaximumSearchDepth(player, opponent, timeLimit));
 }
 
 std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE]) {

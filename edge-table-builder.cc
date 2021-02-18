@@ -19,12 +19,11 @@
  *   C A B B A C
  */
 
-enum { UNSTABLE, ALONE, SEMISTABLE, UNANCHORED_STABLE, STABLE1, STABLE2, STABLE3};
-const int staticTable[7][4] = {
-    { 0, -150, -100, -150 },             // unstable
-    { 0, -675, -425, -300},            // alone
-    { 0, -125, -50, -50},           // semi-stable
-    { 0, 0, 400, 500},              // unanchored stable
+enum { UNSTABLE, ALONE, SEMISTABLE, STABLE1, STABLE2, STABLE3};
+const int staticTable[6][4] = {
+    { 0, -250, -50, -50 },             // unstable
+    { 0, -75, -25, -20},            // alone
+    { 0, -175, -100, -100},           // semi-stable
     { 0, 800, 800, 800},            // stable-1
     { 0, 1000, 1000, 1000},         // stable-2
     { 800, 1200, 1000, 1000}         // stable-3
@@ -69,17 +68,6 @@ int getAloneDiscsPlayer(int player, int opponent) {
     int empty = ~(player | opponent);
     player &= 0x7E;
     return ((empty >> 1) & player) & ((empty << 1) & player);
-}
-
-// must occupy A and B squares only
-int getUnanchoredDiscsPlayer(int player, int opponent) {
-    int unstableOpponent = getUnstableDiscsPlayer(opponent, player);
-    if(__builtin_popcount(unstableOpponent) == 2) {
-        int mask = (unstableOpponent & (unstableOpponent - 1)) - ((unstableOpponent & -unstableOpponent)<<1);
-        if((mask & player) == mask) 
-            return mask;
-    } 
-    return 0;
 }
 
 int getStableDiscsTypeOnePlayer(int player, int opponent) {
@@ -188,11 +176,10 @@ int getStableDiscsTypeThreePlayer(int player, int opponent) {
 int getSemiStable(int player, int opponent) {
     int unstable = getUnstableDiscsPlayer(player, opponent),
         alone = getAloneDiscsPlayer(player, opponent),
-        unanchored = getUnanchoredDiscsPlayer(player, opponent),
         stableOne = getStableDiscsTypeOnePlayer(player, opponent),
         stableTwo = getStableDiscsTypeTwoPlayer(player, opponent),
         stableThree = getStableDiscsTypeThreePlayer(player, opponent),
-        semiStable = player & ~(unstable | alone | unanchored | stableOne | stableTwo | stableThree);
+        semiStable = player & ~(unstable | alone | stableOne | stableTwo | stableThree);
     return semiStable;
 }
 
@@ -202,11 +189,10 @@ void getEvaluationScore(int player, int opponent)
         int staticIdx[8],
             unstable = getUnstableDiscsPlayer(player, opponent),
             alone = getAloneDiscsPlayer(player, opponent),
-            unanchored = getUnanchoredDiscsPlayer(player, opponent),
             stableOne = getStableDiscsTypeOnePlayer(player, opponent),
             stableTwo = getStableDiscsTypeTwoPlayer(player, opponent),
             stableThree = getStableDiscsTypeThreePlayer(player, opponent),
-            semiStable = player & ~(unstable | alone | unanchored | stableOne | stableTwo | stableThree);
+            semiStable = player & ~(unstable | alone | stableOne | stableTwo | stableThree);
 
         std::fill(staticIdx, staticIdx + 8, -1);
         auto getIndices = [&staticIdx](int seq, int label) {
@@ -220,7 +206,6 @@ void getEvaluationScore(int player, int opponent)
         getIndices(unstable, UNSTABLE);
         getIndices(alone, ALONE);
         getIndices(semiStable, SEMISTABLE);
-        getIndices(unanchored, UNANCHORED_STABLE);
         getIndices(stableOne, STABLE1);
         getIndices(stableTwo, STABLE2);
         getIndices(stableThree, STABLE3);
@@ -269,7 +254,7 @@ double probabilisticMinimax(int player, int opponent)
     std::vector<double>legal;
     std::vector<std::pair<double,double>>possible;
 
-    legal.push_back(memo[((player>>1) & 0xFF)<<8|((opponent>>1) & 0xFF)]);
+    legal.push_back(-memo[((opponent>>1) & 0xFF)<<8|((player>>1) & 0xFF)]);
     
     while(legalMoves) {
         int t = legalMoves & -legalMoves,
