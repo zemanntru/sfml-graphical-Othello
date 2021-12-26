@@ -22,7 +22,7 @@ int128_t MyGameCPU::ZemanntruBot::getAvailableMoves(int128_t player, int128_t op
     moves |= empty & (t << 8);
     for(t = mask & (player >> 8), mask2 = mask & (mask >> 8); mask2 ; t |= mask2 & (t >> 8), mask2 = mask & (mask2 >> 8));
     moves |= empty & (t >> 8);
-    
+
     //Bitshift move gathering diagonals
     mask = opponent & 0x007E7E7E7E7E7E00;
     for(t = mask & (player << 9), mask2 = mask & (mask << 9); mask2 ; t |= mask2 & (t << 9), mask2 = mask & (mask2 << 9));
@@ -33,7 +33,7 @@ int128_t MyGameCPU::ZemanntruBot::getAvailableMoves(int128_t player, int128_t op
     moves |= empty & (t << 7);
     for(t = mask & (player >> 7), mask2 = mask & (mask >> 7); mask2 ; t |= mask2 & (t >> 7), mask2 = mask & (mask2 >> 7));
     moves |= empty & (t >> 7);
-    
+
     return moves;
 }
 
@@ -42,7 +42,7 @@ int128_t MyGameCPU::ZemanntruBot::getMoveUpdate(int128_t move, int128_t player, 
     int128_t mask, seq, ret = 0;
 
     //bit reverse gathering horizontal operation
-    for(mask = (move >> 1) & 0x7F7F7F7F7F7F7F7F, seq = 0; mask & opponent; seq |= mask, mask = (mask >> 1) & 0x7F7F7F7F7F7F7F7F);  
+    for(mask = (move >> 1) & 0x7F7F7F7F7F7F7F7F, seq = 0; mask & opponent; seq |= mask, mask = (mask >> 1) & 0x7F7F7F7F7F7F7F7F);
     if(mask & player) ret |= seq;
     for(mask = (move << 1) & 0xFEFEFEFEFEFEFEFE, seq = 0; mask & opponent; seq |= mask, mask = (mask << 1) & 0xFEFEFEFEFEFEFEFE);
     if(mask & player) ret |= seq;
@@ -67,8 +67,8 @@ int128_t MyGameCPU::ZemanntruBot::getMoveUpdate(int128_t move, int128_t player, 
 }
 
 int128_t MyGameCPU::ZemanntruBot::edgeStabilityEvaluation(int128_t player, int128_t opponent)
-{ //Return pattern based edge configuration evaluations 
-    double sum = edgeTable[getTopEdgeKey(player, opponent)] + //A1A8 
+{ //Return pattern based edge configuration evaluations
+    double sum = edgeTable[getTopEdgeKey(player, opponent)] + //A1A8
         edgeTable[getRightEdgeKey(player, opponent)] + //H1H8
         edgeTable[getBottomEdgeKey(player, opponent)] + //A1H1
         edgeTable[getLeftEdgeKey(player, opponent)];  //A8H8
@@ -79,105 +79,105 @@ int128_t MyGameCPU::ZemanntruBot::potentialMobilityEvaluation(int128_t player, i
 {   //Count differential empty spaces for non edge pieces of both player and opponent
     int128_t combo = (player | opponent) & 0x007E7E7E7E7E7E00, empty = ~(player | opponent), mask;
     int128_t pplayer = 0, popponent = 0;
-    mask = (empty >> 1) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty >> 1) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty << 1) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty << 1) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty >> 8) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty >> 8) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty << 8) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty << 8) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty >> 7) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty >> 7) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty << 7) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty << 7) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty >> 9) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty >> 9) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
     }
 
-    mask = (empty << 9) & 0xFFFFFFFFFFFFFFFF & combo; 
-    while(mask){ 
+    mask = (empty << 9) & 0xFFFFFFFFFFFFFFFF & combo;
+    while(mask){
         int128_t t = mask & -mask;
         if(t & player) {
             pplayer++;
             player ^= t;
         } else if(t & opponent) {
-            popponent++; 
+            popponent++;
             opponent ^= t;
         }
         mask &= mask - 1;
@@ -203,7 +203,7 @@ int128_t MyGameCPU::ZemanntruBot::evaluateBoard(int128_t player, int128_t oppone
     int128_t sum = 0, stage = __builtin_popcountll(player | opponent);
     int128_t CMOBILITY = 147000 + 19500 * stage,  PMOBILITY = 55000 + 12000 * stage, CCOUNT = 550000 + 3000 * stage, CEDGE = 7000 + 100 * stage;
     if(stage == 64) return endgameEvaluation(player, opponent);
-    sum += CEDGE * edgeStabilityEvaluation(player, opponent) - CCOUNT * PieceEvaluation(player, opponent) + 
+    sum += CEDGE * edgeStabilityEvaluation(player, opponent) - CCOUNT * PieceEvaluation(player, opponent) +
     + PMOBILITY *  potentialMobilityEvaluation(player, opponent) + CMOBILITY * mobilityEvaluation(player, opponent);
     return sum;
 }
@@ -215,28 +215,28 @@ int128_t MyGameCPU::ZemanntruBot::endgameEvaluation(int128_t player, int128_t op
         return (score<<100);
     else
         return -(score<<100);
-    
+
 }
 
 int128_t MyGameCPU::ZemanntruBot::negaMax(int128_t player, int128_t opponent, int depth, int128_t alpha, int128_t beta)
 {
-    if(depth == 0) 
+    if(depth == 0)
         return evaluateBoard(player, opponent);
     int128_t moves = getAvailableMoves(player, opponent), best = -(1LL<<62);
     bool turnOpponent = false;
     if(!moves)
-    {   //player has no moves 
-        turnOpponent = 1; 
+    {   //player has no moves
+        turnOpponent = 1;
         moves = getAvailableMoves(opponent, player);
-        if(moves){   
-            if(depth == 1) 
+        if(moves){
+            if(depth == 1)
                 return evaluateBoard(player, opponent);
             //Swap the current alpha and beta values now in opponent's reference
-            alpha = -beta; 
+            alpha = -beta;
             beta = -alpha;
             std::swap(player, opponent);
             --depth;
-        } else 
+        } else
             return endgameEvaluation(player, opponent);
     }
     while(moves) {
@@ -252,45 +252,45 @@ int128_t MyGameCPU::ZemanntruBot::negaMax(int128_t player, int128_t opponent, in
 }
 
 int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, bool bRoot, int depth, int128_t alpha, int128_t beta, std::vector<uint64_t>& numNodes)
-{   
+{
     int128_t a = alpha;
     if(numNodes.size())
         ++numNodes[depth];
 
-    if(depth == 0) 
+    if(depth == 0)
         return evaluateBoard(player, opponent);
     else {
         if(bRoot) mLookupTable.clear();
         else if(mLookupTable.count(player << 64 | opponent) != 0) // an empty flag indicates that this bucket is empty
-        {    
+        {
             memoEntry lookup = mLookupTable[player << 64 | opponent];
-            //Memoize values based on flag values 
+            //Memoize values based on flag values
             //https://en.wikipedia.org/wiki/Negamax
             if(lookup.mDepth >= depth)
             {
-                if(lookup.mFlag == 1) 
+                if(lookup.mFlag == 1)
                     return lookup.mEval;
-                else if(lookup.mFlag == 2) 
+                else if(lookup.mFlag == 2)
                     alpha = std::max(alpha, lookup.mEval);
                 else
                     beta = std::min(beta, lookup.mEval);
 
-                if(alpha >= beta) 
+                if(alpha >= beta)
                     return lookup.mEval;
             }
         }
     }
-    //Get moves for next configuration 
+    //Get moves for next configuration
     int128_t moves = getAvailableMoves(player, opponent), bestMove;
     bool turnOpponent = false, init = true;
 
     if(!moves)
-    {   //player has no moves 
-        turnOpponent = 1; 
+    {   //player has no moves
+        turnOpponent = 1;
         moves = getAvailableMoves(opponent, player);
         if(moves)
         {   // If opponent has moves
-            if(depth == 1) 
+            if(depth == 1)
             {   //if depth is 1, we cannot skip to the opponent's turn
                 //Evaluate and save the entries
                 int128_t eval = evaluateBoard(player, opponent);
@@ -298,7 +298,7 @@ int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, 
                 return eval;
             }
             //Swap the current alpha and beta values now in opponent's reference
-            alpha = -beta; 
+            alpha = -beta;
             beta = -alpha;
             std::swap(player, opponent);
             --depth;
@@ -309,20 +309,20 @@ int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, 
             return eval;
         }
     }
-    
+
     std::vector<int128_t>sortedMoves = getMoveOrdering(moves, player, opponent);
     bestMove = sortedMoves[0];
     for(const auto &t : sortedMoves)
     {   //Node search is always the LSB at the current moment
         int128_t test = 0,
                  rev = getMoveUpdate(t, player, opponent);
-       
+
         //Null window search
-        if(init) 
+        if(init)
             test = -negaScout(opponent^rev, player^(rev|t), false, depth - 1, -beta, -alpha, numNodes);
         else {
             test = -negaScout(opponent^rev, player^(rev|t), false, depth - 1, -alpha - 1, -alpha, numNodes);
-            if(alpha < test && test < beta) 
+            if(alpha < test && test < beta)
                 test = -negaScout(opponent^rev, player^(rev|t), false, depth - 1, -beta, -test, numNodes);
         }
         if(test > alpha){
@@ -330,7 +330,7 @@ int128_t MyGameCPU::ZemanntruBot::negaScout(int128_t player, int128_t opponent, 
             bestMove = t;
         }
         if(alpha >= beta) break; //Alpha Beta pruning
-        init = false; 
+        init = false;
     } //Save entries after search
     mLookupTable[player << 64 | opponent] = {alpha, depth, (char)(alpha <= a ? 3 : (alpha >= beta ? 2 : 1))};
     if(mLookupTable.size() > (1<<16)) {
@@ -346,7 +346,7 @@ std::vector<int128_t> MyGameCPU::ZemanntruBot::getMoveOrdering(int128_t moves, i
     std::vector<std::pair<int128_t,int128_t>>memo, eval;
     std::vector<int128_t>ord;
     while(x) {
-        int128_t t = x & -x, 
+        int128_t t = x & -x,
                  rev = getMoveUpdate(t, player, opponent),
                  p = player^(rev|t),
                  o = opponent^rev;
@@ -401,7 +401,7 @@ int MyGameCPU::ZemanntruBot::getRightEdgeKey(int128_t player, int128_t opponent)
 }
 
 
-int MyGameCPU::ZemanntruBot::getBottomEdgeKey(int128_t player, int128_t opponent) 
+int MyGameCPU::ZemanntruBot::getBottomEdgeKey(int128_t player, int128_t opponent)
 {
     int128_t x = 0xFF;
     int ret = 0;
@@ -420,7 +420,7 @@ int MyGameCPU::ZemanntruBot::getBottomEdgeKey(int128_t player, int128_t opponent
     return ret;
 }
 
-int MyGameCPU::ZemanntruBot::getLeftEdgeKey(int128_t player, int128_t opponent) 
+int MyGameCPU::ZemanntruBot::getLeftEdgeKey(int128_t player, int128_t opponent)
 {
     int128_t x = 0x8080808080808080;
     int ret = 0;
@@ -442,7 +442,7 @@ int MyGameCPU::ZemanntruBot::getLeftEdgeKey(int128_t player, int128_t opponent)
 
 void MyGameCPU::ZemanntruBot::DisplayBitBoard(int128_t black, int128_t white)
 {  //Display binary strings in an array configuration
-    std::cout << "  "; 
+    std::cout << "  ";
     for(int i = 0; i < BOARD_SIZE; ++i) std::cout << (char)('A' + i) << " ";
     std::cout << std::endl;
     for(int i = 0; i < BOARD_SIZE; ++i){
@@ -458,7 +458,7 @@ void MyGameCPU::ZemanntruBot::DisplayBitBoard(int128_t black, int128_t white)
 }
 
 std::pair<double, double> MyGameCPU::ZemanntruBot::estimateBranchingFactor(int depth, std::vector<uint64_t>&numNodes) {
-    
+
     double playerBranchingFactor = 0,
            opponentBranchingFactor = 0;
 
@@ -476,7 +476,7 @@ std::pair<double, double> MyGameCPU::ZemanntruBot::estimateBranchingFactor(int d
     }
     if(playerLevels) playerBranchingFactor /= playerLevels;
     else playerBranchingFactor = 0;
-    
+
     if(opponentLevels) opponentBranchingFactor /= opponentLevels;
     else opponentBranchingFactor = 0;
 
@@ -485,8 +485,8 @@ std::pair<double, double> MyGameCPU::ZemanntruBot::estimateBranchingFactor(int d
 
 int MyGameCPU::ZemanntruBot::estimateMaximumSearchDepth(int128_t player, int128_t opponent, double timeLimit) {
 
-    int remainDepth = 64 - __builtin_popcountll(player | opponent), 
-        testDepth = std::min(8, remainDepth), 
+    int remainDepth = 64 - __builtin_popcountll(player | opponent),
+        testDepth = std::min(8, remainDepth),
         maxDepth = 0;
     double elapsed, timePerNode, timeCounter = 0;
     bool parity = true;
@@ -517,31 +517,31 @@ int MyGameCPU::ZemanntruBot::estimateMaximumSearchDepth(int128_t player, int128_
     return remainDepth;
 }
 
-int MyGameCPU::ZemanntruBot::allocateSearchDepth(int128_t player, int128_t opponent) 
+int MyGameCPU::ZemanntruBot::allocateSearchDepth(int128_t player, int128_t opponent)
 {
     double timeLimit;
     int128_t combine = player | opponent;
-    int stage = __builtin_popcountll(combine), 
+    int stage = __builtin_popcountll(combine),
     empty = __builtin_popcountll(~combine & 0xFFFFFFFFFFFFFFFF);
     assert(mMaxTimeAllocation > 0);
-    if(stage < 50) timeLimit = 3 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
+    if(stage < 50) timeLimit = 2 * mMaxTimeAllocation / empty;          // midgame search, about 1.0 maximum
     else timeLimit = SAFETY_FACTOR * mMaxTimeAllocation;                // endgame search, try to go deep as possible
-    return std::min(11, estimateMaximumSearchDepth(player, opponent, timeLimit));
+    return std::min(8, estimateMaximumSearchDepth(player, opponent, timeLimit));
 }
 
 std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][BOARD_SIZE]) {
 
     // main driver function to get the search move
-    
+
     // Extract the bitboard from the array
     int128_t player = 0, opponent = 0;
     for(int i = 0; i < BOARD_SIZE; i++) {
         for(int j = 0; j < BOARD_SIZE; j++) {
-            if(board[i][j] == BLACK) 
+            if(board[i][j] == BLACK)
                 player |= (1ULL<<((BOARD_SIZE - 1 - i)*BOARD_SIZE + BOARD_SIZE - 1 - j));
-            else if(board[i][j] == WHITE) 
+            else if(board[i][j] == WHITE)
                 opponent |= (1ULL<<((BOARD_SIZE - 1 - i)*BOARD_SIZE + BOARD_SIZE - 1 - j));
-        } 
+        }
     }
 
     if(mColor == 'W') std::swap(player, opponent);
@@ -562,13 +562,13 @@ std::pair<int,int> MyGameCPU::ZemanntruBot::chooseMove(int(&board)[BOARD_SIZE][B
     player ^= (rev | bestMove);
     opponent ^= rev;
     if(mColor == 'W') std::swap(player, opponent);
-    
+
     DisplayBitBoard(player, opponent);
 
-    std::cout << "My bot places at: " << (char)('A' + ret % 8) << (char)('1' + ret / 8) << " in " 
+    std::cout << "My bot places at: " << (char)('A' + ret % 8) << (char)('1' + ret / 8) << " in "
     << std::fixed << std::setprecision(3) << elapsed << "s" << std::endl;
     std::cout << "Remaining time: " << mMaxTimeAllocation << "s" << std::endl;
     std::cout << "==================================" << std::endl << std::endl;
-    
+
     return {ret % 8, ret / 8};
 }
